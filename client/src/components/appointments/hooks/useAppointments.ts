@@ -10,6 +10,12 @@ import { useLoginData } from '@/auth/AuthContext';
 import { axiosInstance } from '@/axiosInstance';
 import { queryKeys } from '@/react-query/constants';
 
+// for useQuery and prefetchQuery
+const commonOptions = {
+  staleTime: 0,
+  gcTime: 30000, // 5 minutes
+};
+
 // for useQuery call
 async function getAppointments(
   year: string,
@@ -76,6 +82,7 @@ export function useAppointments() {
         nextMonthYear.month,
       ],
       queryFn: () => getAppointments(nextMonthYear.year, nextMonthYear.month),
+      ...commonOptions,
     });
   }, [monthYear, queryClient]);
 
@@ -91,6 +98,8 @@ export function useAppointments() {
     queryKey: [queryKeys.appointments, monthYear.year, monthYear.month],
     queryFn: () => getAppointments(monthYear.year, monthYear.month),
     select: (data) => selectFn(data, showAll),
+    refetchOnWindowFocus: true,
+    ...commonOptions,
   });
 
   /** ****************** END 3: useQuery  ******************************* */
