@@ -7,16 +7,18 @@ import {
   Heading,
   Input,
   Stack,
-} from "@chakra-ui/react";
-import { Field, Form, Formik } from "formik";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+} from '@chakra-ui/react';
+import { Field, Form, Formik } from 'formik';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { usePatchUser } from "./hooks/usePatchUser";
-import { useUser } from "./hooks/useUser";
-import { UserAppointments } from "./UserAppointments";
+import { MUTATION_KEY, usePatchUser } from './hooks/usePatchUser';
+import { useUser } from './hooks/useUser';
+import { UserAppointments } from './UserAppointments';
 
-import { useLoginData } from "@/auth/AuthContext";
+import { useLoginData } from '@/auth/AuthContext';
+import { useMutationState } from '@tanstack/react-query';
+import { User } from '@shared/types';
 
 export function UserProfile() {
   const { userId } = useLoginData();
@@ -28,11 +30,22 @@ export function UserProfile() {
     // use login data for redirect, for base app that doesn't
     //   retrieve user data from the server yet
     if (!userId) {
-      navigate("/signin");
+      navigate('/signin');
     }
   }, [userId, navigate]);
 
-  const formElements = ["name", "address", "phone"];
+  const pendingData = useMutationState({
+    filters: { mutationKey: [MUTATION_KEY], status: 'pending' },
+    select: (mutation) => {
+      return mutation.state.variables as User;
+    },
+  });
+
+  // take the first item in den pendigData array
+  // we know there is only one mutation that matches the filter
+  const pendingUser = pendingData ? pendingData[0] : null;
+
+  const formElements = ['name', 'address', 'phone'];
   interface FormValues {
     name: string;
     address: string;
@@ -44,15 +57,17 @@ export function UserProfile() {
       <Stack spacing={8} mx="auto" w="xl" py={12} px={6}>
         <UserAppointments />
         <Stack textAlign="center">
-          <Heading>Your information</Heading>
+          <Heading>
+            Information vor {pendingUser ? pendingUser.name : user?.name}
+          </Heading>
         </Stack>
         <Box rounded="lg" bg="white" boxShadow="lg" p={8}>
           <Formik
             enableReinitialize
             initialValues={{
-              name: user?.name ?? "",
-              address: user?.address ?? "",
-              phone: user?.phone ?? "",
+              name: user?.name ?? '',
+              address: user?.address ?? '',
+              phone: user?.phone ?? '',
             }}
             onSubmit={(values: FormValues) => {
               patchUser({ ...user, ...values });
